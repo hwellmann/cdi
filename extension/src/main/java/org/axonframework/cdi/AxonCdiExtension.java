@@ -88,12 +88,9 @@ public class AxonCdiExtension implements Extension {
 
     private void registerGlobalTransactionManager(Configurer configurer,
         Instance<Object> instance) {
-        Instance<TransactionManager> itm = instance.select(TransactionManager.class);
-        if (itm.isResolvable()) {
-            TransactionManager tm = itm.get();
-            logger.debug("Registering global transaction manager {}", tm.getClass());
-            configurer.configureTransactionManager(c -> tm);
-        }
+        TransactionManager tm = instance.select(TransactionManager.class).get();
+        logger.debug("Registering global transaction manager {}", tm.getClass());
+        configurer.configureTransactionManager(c -> tm);
     }
 
     private void registerAggregates(Configurer configurer) {
@@ -142,7 +139,6 @@ public class AxonCdiExtension implements Extension {
     private boolean isAggregate(Class<?> clazz) {
         return aggregates.contains(clazz);
     }
-
 
     private boolean isSaga(Class<?> clazz) {
         return sagas.contains(clazz);
