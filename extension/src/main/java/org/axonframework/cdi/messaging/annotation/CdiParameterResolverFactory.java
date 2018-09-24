@@ -1,16 +1,16 @@
 package org.axonframework.cdi.messaging.annotation;
 
 import java.lang.invoke.MethodHandles;
-import org.axonframework.cdi.CdiUtilities;
+import java.lang.reflect.Executable;
+import java.lang.reflect.Parameter;
+
+import javax.enterprise.inject.Instance;
+import javax.enterprise.inject.spi.BeanManager;
+import javax.enterprise.inject.spi.CDI;
+
 import org.axonframework.common.Priority;
 import org.axonframework.messaging.annotation.ParameterResolver;
 import org.axonframework.messaging.annotation.ParameterResolverFactory;
-
-import javax.enterprise.inject.spi.Bean;
-import javax.enterprise.inject.spi.BeanManager;
-import java.lang.reflect.Executable;
-import java.lang.reflect.Parameter;
-import java.util.Set;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -29,7 +29,7 @@ public class CdiParameterResolverFactory implements ParameterResolverFactory {
     private final BeanManager beanManager;
 
     public CdiParameterResolverFactory() {
-        this.beanManager = CdiUtilities.getBeanManager();
+        this.beanManager = CDI.current().getBeanManager();
     }
 
     @Override
@@ -45,24 +45,18 @@ public class CdiParameterResolverFactory implements ParameterResolverFactory {
             return null;
         }
 
-        logger.trace("Create instance for {} {}.", parameter.getType(), 
-                parameter.getAnnotations());
-        
-        final Set<Bean<?>> beansFound = beanManager.getBeans(parameter.getType(), 
-                parameter.getAnnotations());
-        
-        if (beansFound.isEmpty()) {
+        logger.trace("Create instance for {} {}.", parameter.getType(), parameter.getAnnotations());
+
+        Instance<?> instance = beanManager.createInstance().select(parameter.getType(), parameter.getAnnotations());
+
+        if (instance.isUnsatisfied()) {
             return null;
-        } else if (beansFound.size() > 1) {
-            if (logger.isWarnEnabled()) {
-                logger.warn("Ambiguous reference for parameter type {} with qualifiers {}.", 
-                        parameter.getType().getName(), parameter.getAnnotations());
-            }
-            
+        } else if (instance.isAmbiguous()) {
+            logger.warn("Ambiguous reference for parameter type {} with qualifiers {}.",
+                parameter.getType().getName(), parameter.getAnnotations());
             return null;
         } else {
-            return new CdiParameterResolver(beanManager, 
-                    beansFound.iterator().next(), parameter.getType());
+            return new CdiParameterResolver(instance);
         }
     }
 }

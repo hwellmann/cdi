@@ -58,5 +58,4 @@ public class JtaTransactionManager implements TransactionManager {
             throw new TransactionMethodExecutionException(exc.getMessage(), exc);
         }
     }
-
 }

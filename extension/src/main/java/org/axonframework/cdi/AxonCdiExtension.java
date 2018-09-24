@@ -28,8 +28,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- * Main CDI extension class responsible for collecting CDI beans and setting up
- * Axon configuration.
+ * @author Harald Wellmann
+ *
  */
 public class AxonCdiExtension implements Extension {
 
@@ -77,26 +77,45 @@ public class AxonCdiExtension implements Extension {
 
         configurer.configureResourceInjector(c -> new CdiResourceInjector(beanManager));
 
+        registerGlobalTransactionManager(configurer, instance);
+        registerAggregates(configurer);
+        registerSagaManagers(configurer);
+        registerCommandHandlers(configurer, instance);
+        registerEventHandlers(configurer, instance);
+
+        return configurer.buildConfiguration();
+    }
+
+    private void registerGlobalTransactionManager(Configurer configurer,
+        Instance<Object> instance) {
         Instance<TransactionManager> itm = instance.select(TransactionManager.class);
         if (itm.isResolvable()) {
             TransactionManager tm = itm.get();
             logger.debug("Registering global transaction manager {}", tm.getClass());
             configurer.configureTransactionManager(c -> tm);
         }
+    }
 
+    private void registerAggregates(Configurer configurer) {
         for (Class<?> aggregate : aggregates) {
             configurer.configureAggregate(aggregate);
         }
+    }
 
+    private void registerSagaManagers(Configurer configurer) {
         for (Class<?> saga : sagas) {
             configurer.registerModule(SagaConfiguration.trackingSagaManager(saga));
         }
+    }
 
+    private void registerCommandHandlers(Configurer configurer, Instance<Object> instance) {
         for (Class<?> commandHandler : commandHandlers) {
             logger.debug("Registering command handler {}", commandHandler);
             configurer.registerCommandHandler(c -> instance.select(commandHandler).get());
         }
+    }
 
+    private void registerEventHandlers(Configurer configurer, Instance<Object> instance) {
         EventHandlingConfiguration ehc = instance.select(EventHandlingConfiguration.class).get();
         for (Class<?> eventHandler : eventHandlers) {
             if (!isSaga(eventHandler) && !isAggregate(eventHandler)) {
@@ -106,9 +125,6 @@ public class AxonCdiExtension implements Extension {
             }
         }
         configurer.registerModule(ehc);
-
-        return configurer.buildConfiguration();
-
     }
 
     private void createRepositoryBean(AfterBeanDiscovery abd, BeanManager beanManager, Class<?> aggregate) {
@@ -124,11 +140,11 @@ public class AxonCdiExtension implements Extension {
     }
 
     private boolean isAggregate(Class<?> clazz) {
-        return aggregates.stream().anyMatch(clazz::equals);
+        return aggregates.contains(clazz);
     }
 
 
     private boolean isSaga(Class<?> clazz) {
-        return sagas.stream().anyMatch(clazz::equals);
+        return sagas.contains(clazz);
     }
 }
