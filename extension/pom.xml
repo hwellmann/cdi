@@ -6,14 +6,14 @@
 
     <name>Axon Framework CDI Support</name>
     <groupId>org.axonframework</groupId>
-    <artifactId>axon-cdi</artifactId>
+    <artifactId>axon-cdi20</artifactId>
     <version>0.1-SNAPSHOT</version>
 
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <java.version>1.8</java.version>
         <axon.version>3.3.5</axon.version>
-        <javaee-api.version>7.0</javaee-api.version>
+        <javaee-api.version>8.0</javaee-api.version>
     </properties>
 
     <dependencies>
@@ -33,14 +33,14 @@
             <artifactId>slf4j-api</artifactId>
             <version>1.7.25</version>
         </dependency>
+
+        <!-- Test -->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-simple</artifactId>
             <version>1.7.25</version>
-            <scope>runtime</scope>
+            <scope>test</scope>
         </dependency>
-
-        <!-- Test -->
         <dependency>
             <groupId>junit</groupId>
             <artifactId>junit</artifactId>
